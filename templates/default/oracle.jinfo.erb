@@ -1,0 +1,11 @@
+name=<%= @name %>
+priority=<%= @priority %>
+section=main
+
+<% @jre_cmds.each do |cmd| %>
+jre <%= cmd %> <%= @java_home %>/jre/bin/<%= cmd %>
+<% end %>
+<% @jdk_cmds.each do |cmd| %>
+jdk <%= cmd %> <%= @java_home %>/bin/<%= cmd %>
+<% end %>
+
