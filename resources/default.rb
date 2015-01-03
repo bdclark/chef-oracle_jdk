@@ -26,6 +26,9 @@ attribute :owner, kind_of: String, default: 'root'
 attribute :group, kind_of: String
 attribute :mode, kind_of: String, default: '0755'
 attribute :set_alternatives, equal_to: [true, false], default: true
+attribute :set_default, equal_to: [true, false], default: false
+
 attribute :priority, kind_of: Integer
+attribute :name, kind_of: String
 
 attribute :home, kind_of: String

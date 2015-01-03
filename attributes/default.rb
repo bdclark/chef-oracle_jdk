@@ -3,6 +3,7 @@
 default['oracle_jdk']['url'] = 'http://steadyserv-packages.s3.amazonaws.com/oracle-jdk/jdk-7u71-linux-x64.tar.gz'
 default['oracle_jdk']['checksum'] = '80d5705fc37fc4eabe3cea480e0530ae0436c2c086eb8fc6f65bb21e8594baf8'
 default['oracle_jdk']['path'] = '/usr/lib/jvm'
+default['oracle_jdk']['set_default'] = false
 
 default['oracle_jdk']['7']['jre_cmds'] =
   %w(java keytool orbd pack200 policytool rmid rmiregistry

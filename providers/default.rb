@@ -75,21 +75,23 @@ action :install do
 
   case node['platform_family']
   when 'rhel'
-    cmd = alt_install(jre_cmds, "#{java_home}/jre/bin", alt_priority, java_home)
+    cmd = alt_group(jre_cmds, "#{java_home}/jre/bin", alt_priority, java_home)
     cmd << alt_line("#{new_resource.path}/jre", 'jre', "#{java_home}/jre")
     guard = %(alternatives --display java | grep )
     guard << %("#{java_home}/jre/bin/java - priority #{alt_priority}")
-    execute 'java alternatives' do
+
+    execute 'install java alternative' do
       command cmd.join(" \\\n")
       action :run
       not_if guard
     end
 
-    cmd = alt_install(jdk_cmds, "#{java_home}/bin", alt_priority, java_home)
+    cmd = alt_group(jdk_cmds, "#{java_home}/bin", alt_priority, java_home)
     cmd << alt_line("#{new_resource.path}/java_sdk", 'java_sdk', java_home)
     guard = %(alternatives --display javac | grep )
     guard << %("#{java_home}/bin/javac - priority #{alt_priority}")
-    execute 'javac alternatives' do
+
+    execute 'install javac alternative' do
       command cmd.join(" \\\n")
       action :run
       not_if guard
@@ -99,7 +101,8 @@ action :install do
                    "jre_1.#{@version}.0", "#{java_home}/jre", alt_priority)
     guard = %(alternatives --display jre_1.#{@version}.0 | grep )
     guard << %("#{java_home}/jre - priority #{alt_priority}")
-    execute "jre_1.#{@version}.0 alternative" do
+
+    execute "install jre_1.#{@version}.0 alternative" do
       command cmd
       action :run
       not_if guard
@@ -109,15 +112,34 @@ action :install do
                    "java_sdk_1.#{@version}.0", java_home, alt_priority)
     guard = %(alternatives --display java_sdk_1.#{@version}.0 | grep )
     guard << %("#{java_home} - priority #{alt_priority}")
-    execute "java_sdk_1.#{@version}.0 alternative" do
+
+    execute "install java_sdk_1.#{@version}.0 alternative" do
       command cmd
       action :run
       not_if guard
     end
+
+    if new_resource.set_default
+      {
+        'java' => "#{java_home}/jre/bin/java",
+        'javac' => "#{java_home}/bin/javac",
+        "jre_1.#{@version}.0" => "#{java_home}/jre",
+        "java_sdk_1.#{@version}.0" => java_home
+      }.each do |name, path|
+        guard = %(alternatives --display #{name} | grep )
+        guard << %("link currently points to #{path}")
+        execute "set #{name} alternative" do
+          command %(alternatives --set #{name} "#{path}")
+          action :run
+          not_if guard
+        end
+      end
+    end
+
   when 'debian'
     java_name, priority = @jdk_name, alt_priority
 
-    template "#{new_resource.path}/#{@jdk_name}.jinfo" do
+    template "#{new_resource.path}/.#{@jdk_name}.jinfo" do
       source 'oracle.jinfo.erb'
       owner new_resource.owner
       group app_group
@@ -130,10 +152,10 @@ action :install do
     end
 
     jre_cmds.each do |java_cmd|
-      cmd = alt_install(java_cmd, "#{java_home}/jre/bin", priority, java_home)
+      cmd = alt_group(java_cmd, "#{java_home}/jre/bin", priority, java_home)
       guard = %(update-alternatives --display #{java_cmd} | grep )
       guard << %("#{java_home}/jre/bin/#{java_cmd} - priority #{priority}")
-      execute "#{java_cmd} jre alternative" do
+      execute "install #{java_cmd} alternative" do
         command cmd.join(" \\\n")
         action :run
         not_if guard
@@ -141,28 +163,67 @@ action :install do
     end
 
     jdk_cmds.each do |java_cmd|
-      cmd = alt_install(java_cmd, "#{java_home}/bin", priority, java_home)
+      cmd = alt_group(java_cmd, "#{java_home}/bin", priority, java_home)
       guard = %(update-alternatives --display #{java_cmd} | grep )
       guard << %("#{java_home}/bin/#{java_cmd} - priority #{priority}")
-      execute "#{java_cmd} jdk alternative" do
+      execute "install #{java_cmd} alternative" do
         command cmd.join(" \\\n")
         action :run
         not_if guard
       end
     end
+
+    execute "#{new_resource.name}-set_java_alternatives" do
+      command %(update-java-alternatives --set #{java_name})
+      action :run
+      only_if { new_resource.set_default }
+    end
   end
 end
 
 action :remove do
+  java_home = ::File.join(new_resource.path, @jdk_dir)
+
   directory ::File.join(new_resource.path, @jdk_dir) do
+    recursive true
     action :delete
   end
 
-  # case node['platform_family']
-  # when 'rhel'
-  #   cmd = %(update-alternatives --remove java "#{java_home}/jre/bin/java")
-  # when 'debian'
-  # end
+  case node['platform_family']
+  when 'rhel'
+    {
+      'java' => "#{java_home}/jre/bin/java",
+      'javac' => "#{java_home}/bin/javac",
+      "jre_1.#{@version}.0" => "#{java_home}/jre",
+      "java_sdk_1.#{@version}.0" => java_home
+    }.each do |name, path|
+      execute "remove #{name} alternative" do
+        command %(alternatives --remove #{name} "#{path}")
+        action :run
+        only_if %(alternatives --display #{name} | grep "#{path}")
+      end
+    end
+  when 'debian'
+    file "#{java_home}/.#{@jdk_name}.jinfo" do
+      action :delete
+    end
+
+    node['oracle_jdk'][@version.to_s]['jre_cmds'].each do |c|
+      execute "remove #{c} alternative" do
+        command %(update-alternatives --remove #{c} "#{java_home}/jre/bin/#{c}")
+        action :run
+        only_if %(update-alternatives --display #{c} | grep "#{java_home}")
+      end
+    end
+
+    node['oracle_jdk'][@version.to_s]['jdk_cmds'].each do |c|
+      execute "remove #{c} alternative" do
+        command %(update-alternatives --remove #{c} "#{java_home}/bin/#{c}")
+        action :run
+        only_if %(update-alternatives --display #{c} | grep "#{java_home}")
+      end
+    end
+  end
 end
 
 def alt_priority
@@ -189,7 +250,7 @@ def alt_cmd_line(link_dir, name, real_dir, priority = nil)
   alt_line(link, name, path, priority)
 end
 
-def alt_install(java_cmds, cmd_dir, priority, jdk_home)
+def alt_group(java_cmds, cmd_dir, priority, jdk_home)
   java_cmds = Array(java_cmds)
   man_dir = '/usr/share/man/man1'
   cmd = []

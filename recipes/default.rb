@@ -22,4 +22,5 @@ oracle_jdk 'jdk' do
   path node['oracle_jdk']['path']
   owner node['oracle_jdk']['owner']
   group node['oracle_jdk']['group']
+  set_default node['oracle_jdk']['set_default']
 end
