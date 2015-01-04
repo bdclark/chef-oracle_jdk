@@ -29,16 +29,50 @@ def load_current_resource
   fail "Unrecognized or unsupported Oracle JDK: #{@tarball_name}" unless match
   @version, @revision = match[1], match[2]
   @architecture, @extension = match[3], match[4]
-  @jdk_name = "jdk1.#{@version}.0_#{@revision}"
-  @jdk_dir = @jdk_name
+end
+
+def jdk_dir_name
+  "jdk1.#{@version}.0_#{@revision}"
+end
+
+def app_name
+  new_resource.app_name || jdk_dir_name
+end
+
+def app_group
+  new_resource.group || Etc.getpwnam(new_resource.owner).gid
+end
+
+def java_home
+  ::File.join(new_resource.path, app_name)
+end
+
+def jre_cmds
+  node['oracle_jdk'][@version.to_s]['jre_cmds']
+end
+
+def jdk_cmds
+  node['oracle_jdk'][@version.to_s]['jdk_cmds']
+end
+
+def alt_priority
+  if platform_family?('rhel')
+    # OpenJDK 6 uses 16000, OpenJDK 7 uses 170071 for 1.7.0_71
+    # OpenJDK 8 (currently) uses 2-digit priority
+    # Use 2V00RR (V=version, RR=revision) to win over OpenJDK 7
+    priority = 200_000 + (@version.to_i * 10_000) + @revision.to_i
+  else
+    # Use 1VRR (V=version, RR=revision)
+    # This should win over equivalent OpenJDK in Ubuntu
+    priority = 1000 + (@version.to_i * 100) + @revision.to_i
+  end
+  new_resource.priority || priority
 end
 
 action :install do
   archive_dir = Chef::Config[:file_cache_path]
   archive_path = ::File.join(archive_dir, @tarball_name)
-  extracted_archive_path = ::File.join(archive_dir, @jdk_name)
-  java_home = ::File.join(new_resource.path, @jdk_dir)
-  app_group = new_resource.group || Etc.getpwnam(new_resource.owner).gid
+  extracted_archive_path = ::File.join(archive_dir, jdk_dir_name)
 
   case @extension
   when 'tar.gz', 'gz', 'tgz'
@@ -69,9 +103,6 @@ action :install do
       EOH
     not_if { ::File.directory?(java_home) }
   end
-
-  jre_cmds = node['oracle_jdk'][@version.to_s]['jre_cmds']
-  jdk_cmds = node['oracle_jdk'][@version.to_s]['jdk_cmds']
 
   case node['platform_family']
   when 'rhel'
@@ -137,24 +168,22 @@ action :install do
     end
 
   when 'debian'
-    java_name, priority = @jdk_name, alt_priority
-
-    template "#{new_resource.path}/.#{@jdk_name}.jinfo" do
+    template "#{new_resource.path}/.#{app_name}.jinfo" do
       source 'oracle.jinfo.erb'
       owner new_resource.owner
       group app_group
       variables(
-        priority: priority,
+        priority: alt_priority,
         jre_cmds: jre_cmds,
         jdk_cmds: jdk_cmds,
-        name: java_name,
+        name: app_name,
         java_home: java_home)
     end
 
     jre_cmds.each do |java_cmd|
-      cmd = alt_group(java_cmd, "#{java_home}/jre/bin", priority, java_home)
+      cmd = alt_group(java_cmd, "#{java_home}/jre/bin", alt_priority, java_home)
       guard = %(update-alternatives --display #{java_cmd} | grep )
-      guard << %("#{java_home}/jre/bin/#{java_cmd} - priority #{priority}")
+      guard << %("#{java_home}/jre/bin/#{java_cmd} - priority #{alt_priority}")
       execute "install #{java_cmd} alternative" do
         command cmd.join(" \\\n")
         action :run
@@ -163,9 +192,9 @@ action :install do
     end
 
     jdk_cmds.each do |java_cmd|
-      cmd = alt_group(java_cmd, "#{java_home}/bin", priority, java_home)
+      cmd = alt_group(java_cmd, "#{java_home}/bin", alt_priority, java_home)
       guard = %(update-alternatives --display #{java_cmd} | grep )
-      guard << %("#{java_home}/bin/#{java_cmd} - priority #{priority}")
+      guard << %("#{java_home}/bin/#{java_cmd} - priority #{alt_priority}")
       execute "install #{java_cmd} alternative" do
         command cmd.join(" \\\n")
         action :run
@@ -174,7 +203,7 @@ action :install do
     end
 
     execute "#{new_resource.name}-set_java_alternatives" do
-      command %(update-java-alternatives --set #{java_name})
+      command %(update-java-alternatives --set #{app_name})
       action :run
       only_if { new_resource.set_default }
     end
@@ -182,9 +211,9 @@ action :install do
 end
 
 action :remove do
-  java_home = ::File.join(new_resource.path, @jdk_dir)
+  java_home = ::File.join(new_resource.path, app_name)
 
-  directory ::File.join(new_resource.path, @jdk_dir) do
+  directory java_home do
     recursive true
     action :delete
   end
@@ -204,11 +233,11 @@ action :remove do
       end
     end
   when 'debian'
-    file "#{java_home}/.#{@jdk_name}.jinfo" do
+    file "#{java_home}/.#{app_name}.jinfo" do
       action :delete
     end
 
-    node['oracle_jdk'][@version.to_s]['jre_cmds'].each do |c|
+    jre_cmds.each do |c|
       execute "remove #{c} alternative" do
         command %(update-alternatives --remove #{c} "#{java_home}/jre/bin/#{c}")
         action :run
@@ -216,7 +245,7 @@ action :remove do
       end
     end
 
-    node['oracle_jdk'][@version.to_s]['jdk_cmds'].each do |c|
+    jdk_cmds.each do |c|
       execute "remove #{c} alternative" do
         command %(update-alternatives --remove #{c} "#{java_home}/bin/#{c}")
         action :run
@@ -226,19 +255,7 @@ action :remove do
   end
 end
 
-def alt_priority
-  if platform_family?('rhel')
-    # OpenJDK 6 uses 16000, OpenJDK 7 uses 170071 for 1.7.0_71
-    # OpenJDK 8 (currently) uses 2-digit priority
-    # Use 2V00RR (V=version, RR=revision) to win over OpenJDK 7
-    priority = 200_000 + (@version.to_i * 10_000) + @revision.to_i
-  else
-    # Use 1VRR (V=version, RR=revision)
-    # This should win over equivalent OpenJDK in Ubuntu
-    priority = 1000 + (@version.to_i * 100) + @revision.to_i
-  end
-  new_resource.priority || priority
-end
+private
 
 def alt_line(link, name, path, priority = nil)
   cmd = priority ? 'update-alternatives --install' : '--slave'

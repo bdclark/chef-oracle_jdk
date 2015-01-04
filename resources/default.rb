@@ -22,13 +22,10 @@ default_action :install
 attribute :url, kind_of: String, required: true
 attribute :checksum, kind_of: String, required: true
 attribute :path, kind_of: String, default: '/usr/lib/jvm'
+attribute :app_name, kind_of: String
 attribute :owner, kind_of: String, default: 'root'
 attribute :group, kind_of: String
 attribute :mode, kind_of: String, default: '0755'
 attribute :set_alternatives, equal_to: [true, false], default: true
 attribute :set_default, equal_to: [true, false], default: false
-
 attribute :priority, kind_of: Integer
-attribute :name, kind_of: String
-
-attribute :home, kind_of: String
