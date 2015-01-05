@@ -23,16 +23,16 @@ def whyrun_supported?
 end
 
 def load_current_resource
+  return unless new_resource.url
   @tarball_name = ::File.basename(new_resource.url)
   match =
     /jdk-(\d)u(\d+)-linux-(x64|i586)\.(tar.gz|gz|tgz)$/.match(@tarball_name)
   fail "Unrecognized or unsupported Oracle JDK: #{@tarball_name}" unless match
-  @version, @revision = match[1], match[2]
-  @architecture, @extension = match[3], match[4]
+  @version, @revision, @extension = match[1], match[2], match[4]
 end
 
 def jdk_dir_name
-  "jdk1.#{@version}.0_#{@revision}"
+  @version && @revision ? "jdk1.#{@version}.0_#{@revision}" : nil
 end
 
 def app_name
@@ -70,6 +70,12 @@ def alt_priority
 end
 
 action :install do
+  if new_resource.url.nil? || new_resource.url.empty?
+    fail %(Attribute 'url' required on :install action)
+  end
+  if new_resource.checksum.nil? || new_resource.checksum.empty?
+    fail %(Attribute 'checksum' required on :install action)
+  end
   archive_dir = Chef::Config[:file_cache_path]
   archive_path = ::File.join(archive_dir, @tarball_name)
   extracted_archive_path = ::File.join(archive_dir, jdk_dir_name)
@@ -211,6 +217,10 @@ action :install do
 end
 
 action :remove do
+  unless new_resource.app_name || new_resource.url
+    fail %(Either 'url' or 'checksum' attribute required on :remove action)
+  end
+
   java_home = ::File.join(new_resource.path, app_name)
 
   directory java_home do
@@ -258,7 +268,8 @@ end
 private
 
 def alt_line(link, name, path, priority = nil)
-  cmd = priority ? 'update-alternatives --install' : '--slave'
+  alt_cmd = platform_family?('debian') ? 'update-alternatives' : 'alternatives'
+  cmd = priority ? "#{alt_cmd} --install" : '--slave'
   [cmd, link, name, path, priority].compact.join(' ')
 end
 

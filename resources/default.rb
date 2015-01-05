@@ -19,8 +19,8 @@
 actions :install, :remove
 default_action :install
 
-attribute :url, kind_of: String, required: true
-attribute :checksum, kind_of: String, required: true
+attribute :url, kind_of: String
+attribute :checksum, kind_of: String
 attribute :path, kind_of: String, default: '/usr/lib/jvm'
 attribute :app_name, kind_of: String
 attribute :owner, kind_of: String, default: 'root'
