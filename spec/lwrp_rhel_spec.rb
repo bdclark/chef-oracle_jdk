@@ -44,7 +44,7 @@ describe 'oracle_jdk lwrp rhel' do
 
   before do
     allow(Etc).to receive(:getpwnam).with('bob').and_return(getpwnam)
-    # stub commands for execute guards asserting alternatives not set
+    # stub commands asserting alternatives not set
     java_alts.each do |cmd, path|
       stub = %(alternatives --display #{cmd} | grep )
       stub << %("#{path} - priority 270071")
@@ -214,8 +214,7 @@ describe 'oracle_jdk lwrp rhel' do
     before do
       # stub commands asserting alternatives already set
       java_alts.each do |cmd, path|
-        stub = %(alternatives --display #{cmd} | grep )
-        stub << %("#{path}")
+        stub = %(alternatives --display #{cmd} | grep "#{path}")
         stub_command(stub).and_return(true)
       end
       chef_run.node.set['oracle_test']['action'] = :remove
@@ -252,8 +251,7 @@ describe 'oracle_jdk lwrp rhel' do
       before do
         # stub commands asserting alternatives not set
         java_alts.each do |cmd, path|
-          stub = %(alternatives --display #{cmd} | grep )
-          stub << %("#{path}")
+          stub = %(alternatives --display #{cmd} | grep "#{path}")
           stub_command(stub).and_return(false)
         end
         chef_run.converge(recipe)
