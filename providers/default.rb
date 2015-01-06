@@ -243,7 +243,7 @@ action :remove do
       end
     end
   when 'debian'
-    file "#{java_home}/.#{app_name}.jinfo" do
+    file "#{new_resource.path}/.#{app_name}.jinfo" do
       action :delete
     end
 
