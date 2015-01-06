@@ -208,11 +208,35 @@ action :install do
       end
     end
 
-    execute "#{new_resource.name}-set_java_alternatives" do
-      command %(update-java-alternatives --set #{app_name})
-      action :run
-      only_if { new_resource.set_default }
+    if new_resource.set_default
+      jre_cmds.each do |java_cmd|
+        path = ::File.join(java_home, 'jre', 'bin', java_cmd)
+        guard = %(update-alternatives --display #{java_cmd} | grep )
+        guard << %("link currently points to #{path}")
+        execute "set #{java_cmd} alternative" do
+          command %(update-alternatives --set #{java_cmd} "#{path}")
+          action :run
+          not_if guard
+        end
+      end
+
+      jdk_cmds.each do |java_cmd|
+        path = ::File.join(java_home, 'bin', java_cmd)
+        guard = %(update-alternatives --display #{java_cmd} | grep )
+        guard << %("link currently points to #{path}")
+        execute "set #{java_cmd} alternative" do
+          command %(update-alternatives --set #{java_cmd} "#{path}")
+          action :run
+          not_if guard
+        end
+      end
     end
+
+    # execute "#{new_resource.name}-set_java_alternatives" do
+    #   command %(update-java-alternatives --set #{app_name})
+    #   action :run
+    #   only_if { new_resource.set_default }
+    # end
   end
 end
 
