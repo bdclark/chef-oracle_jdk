@@ -77,15 +77,14 @@ describe 'oracle_jdk lwrp rhel' do
         group: 99)
     end
 
-    context 'when alternatives not set' do
-      jre_cmds.each do |cmd|
-        it "installs #{cmd} alternative" do
-          expect(chef_run).to run_execute("install #{cmd} alternative")
-        end
-      end
-      jdk_cmds.each do |cmd|
-        it "installs #{cmd} alternative" do
-          expect(chef_run).to run_execute("install #{cmd} alternative")
+    context 'when alternatives not installed' do
+      it 'installs alternatives for all jre/jdk commands' do
+        Array(jre_cmds + jdk_cmds).each do |cmd|
+          expect(chef_run).to run_execute("install #{cmd} alternative").with(
+            command: %r{update-alternatives --install /usr/bin/#{cmd} #{cmd}})
+          # man page slaves
+          expect(chef_run).to run_execute("install #{cmd} alternative").with(
+            command: %r{--slave /usr/share/man/man1/#{cmd}.1.gz #{cmd}.1.gz})
         end
       end
     end
@@ -105,61 +104,73 @@ describe 'oracle_jdk lwrp rhel' do
         end
       end
 
-      jre_cmds.each do |cmd|
-        it "does not install #{cmd} alternative" do
-          expect(chef_run).not_to run_execute("install #{cmd} alternative")
-        end
-      end
-      jdk_cmds.each do |cmd|
-        it "does not install #{cmd} alternative" do
+      it 'does not install alternatives' do
+        Array(jre_cmds + jdk_cmds).each do |cmd|
           expect(chef_run).not_to run_execute("install #{cmd} alternative")
         end
       end
     end
 
-    # context 'when set_default false' do
-    #   jre_cmds + jdk_cmds.each do |cmd|
-    #     it "does not set #{cmd} alternative" do
-    #       expect(chef_run).not_to run_execute("set #{cmd} alternative")
-    #     end
-    #   end
-    # end
+    context 'when set_default false' do
+      it 'does not set alternatives' do
+        Array(jre_cmds + jdk_cmds).each do |cmd|
+          expect(chef_run).not_to run_execute("set #{cmd} alternative")
+        end
+      end
+    end
 
-    # context 'when set_default true' do
-    #   before do
-    #     chef_run.node.set['oracle_test']['set_default'] = true
-    #   end
+    context 'when set_default true' do
+      before do
+        chef_run.node.set['oracle_test']['set_default'] = true
+      end
 
-    #   context 'when alternative link does not match' do
-    #     before do
-    #       # stub commands asserting alternative links don't match
-    #       java_alts.each do |cmd, path|
-    #         link_stub = %(alternatives --display #{cmd} | grep )
-    #         link_stub << %("link currently points to #{path}")
-    #         stub_command(link_stub).and_return(false)
-    #       end
-    #       chef_run.converge(recipe)
-    #     end
-    #   end
+      context 'when alternative links do not match' do
+        before do
+          # stub commands asserting alternative links don't match
+          jre_cmds.each do |cmd|
+            link_stub = %(update-alternatives --display #{cmd} | grep "link )
+            link_stub << %(currently points to /opt/jdk1.7.0_71/jre/bin/#{cmd}")
+            stub_command(link_stub).and_return(false)
+          end
+          jdk_cmds.each do |cmd|
+            link_stub = %(update-alternatives --display #{cmd} | grep "link )
+            link_stub << %(currently points to /opt/jdk1.7.0_71/bin/#{cmd}")
+            stub_command(link_stub).and_return(false)
+          end
+          chef_run.converge(recipe)
+        end
 
-    #   context 'when alternative link matches' do
-    #     before do
-    #       # stub commands asserting alternative links match
-    #       java_alts.each do |cmd, path|
-    #         link_stub = %(alternatives --display #{cmd} | grep )
-    #         link_stub << %("link currently points to #{path}")
-    #         stub_command(link_stub).and_return(true)
-    #       end
-    #       chef_run.converge(recipe)
-    #     end
+        it 'sets alternatives for all jre/jdk commands' do
+          Array(jre_cmds + jdk_cmds).each do |cmd|
+            expect(chef_run).to run_execute("set #{cmd} alternative").with(
+              command: /update-alternatives --set #{cmd}/)
+          end
+        end
+      end
 
-    #     java_alts.each do |cmd, _path|
-    #       it "does not set #{cmd} alternative" do
-    #         expect(chef_run).not_to run_execute("set #{cmd} alternative")
-    #       end
-    #     end
-    #   end
-    # end
+      context 'when alternative link matches' do
+        before do
+          # stub commands asserting alternative links match
+          jre_cmds.each do |cmd|
+            link_stub = %(update-alternatives --display #{cmd} | grep "link )
+            link_stub << %(currently points to /opt/jdk1.7.0_71/jre/bin/#{cmd}")
+            stub_command(link_stub).and_return(true)
+          end
+          jdk_cmds.each do |cmd|
+            link_stub = %(update-alternatives --display #{cmd} | grep "link )
+            link_stub << %(currently points to /opt/jdk1.7.0_71/bin/#{cmd}")
+            stub_command(link_stub).and_return(true)
+          end
+          chef_run.converge(recipe)
+        end
+
+        it 'does not set alternatives' do
+          Array(jre_cmds + jdk_cmds).each do |cmd|
+            expect(chef_run).not_to run_execute("set #{cmd} alternative")
+          end
+        end
+      end
+    end
   end
 
   context 'with :remove action' do
@@ -200,16 +211,14 @@ describe 'oracle_jdk lwrp rhel' do
     end
 
     context 'when alternatives set' do
-      jre_cmds.each do |cmd|
-        path = "/opt/jdk1.7.0_71/jre/bin/#{cmd}"
-        it "deletes #{cmd} alternative" do
+      it 'deletes alternatives for all jre/jdk commands' do
+        jre_cmds.each do |cmd|
+          path = "/opt/jdk1.7.0_71/jre/bin/#{cmd}"
           expect(chef_run).to run_execute("remove #{cmd} alternative").with(
             command: "update-alternatives --remove #{cmd} \"#{path}\"")
         end
-      end
-      jdk_cmds.each do |cmd|
-        path = "/opt/jdk1.7.0_71/bin/#{cmd}"
-        it "deletes #{cmd} alternative" do
+        jdk_cmds.each do |cmd|
+          path = "/opt/jdk1.7.0_71/bin/#{cmd}"
           expect(chef_run).to run_execute("remove #{cmd} alternative").with(
             command: "update-alternatives --remove #{cmd} \"#{path}\"")
         end
@@ -227,8 +236,8 @@ describe 'oracle_jdk lwrp rhel' do
         chef_run.converge(recipe)
       end
 
-      Array(jre_cmds + jdk_cmds).each do |cmd|
-        it "does not delete #{cmd} alternative" do
+      it 'does not delete alternatives' do
+        Array(jre_cmds + jdk_cmds).each do |cmd|
           expect(chef_run).not_to run_execute("remove #{cmd} alternative")
         end
       end
