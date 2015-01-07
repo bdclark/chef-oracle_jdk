@@ -53,11 +53,29 @@ describe 'oracle_jdk lwrp rhel' do
   end
 
   context 'with :install action' do
-    it 'downloads jdk remote_file' do
-      expect(chef_run).to create_remote_file(
-        '/var/chef/cache/jdk-7u71-linux-x64.tar.gz').with(
-          source: 'https://example.com/jdk-7u71-linux-x64.tar.gz',
-          checksum: 'mychecksum')
+    context 'with non-oracle url' do
+      it 'downloads jdk remote_file without oracle cookie' do
+        expect(chef_run).to create_remote_file(
+          '/var/chef/cache/jdk-7u71-linux-x64.tar.gz').with(
+            source: 'https://example.com/jdk-7u71-linux-x64.tar.gz',
+            checksum: 'mychecksum',
+            headers: {})
+      end
+    end
+
+    context 'with direct oracle url' do
+      it 'downloads jdk remote_file with oracle cookie' do
+        url = 'http://download.oracle.com/otn-pub/java/jdk/7u71-b14/'
+        url << 'jdk-7u71-linux-x64.tar.gz'
+        chef_run.node.set['oracle_test']['url'] = url
+        chef_run.node.set['oracle_jdk']['accept_oracle_download_terms'] = true
+        chef_run.converge(recipe)
+        expect(chef_run).to create_remote_file(
+          '/var/chef/cache/jdk-7u71-linux-x64.tar.gz').with(
+            source: url,
+            checksum: 'mychecksum',
+            headers: { 'Cookie' => 'oraclelicense=accept-securebackup-cookie' })
+      end
     end
 
     it 'creates parent directory' do

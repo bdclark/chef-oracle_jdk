@@ -88,9 +88,21 @@ action :install do
     fail "Unable to extract #{@tarball_name}, unsupported type"
   end
 
+  if new_resource.url =~ %r{^http:\/\/download.oracle.com.*$}
+    unless node['oracle_jdk']['accept_oracle_download_terms'] == true
+      msg = %(Attribute node['oracle_jdk']['accept_oracle_download_terms'] )
+      msg << %(must be true to download directly from Oracle!)
+      fail msg
+    end
+    headers = { 'Cookie' => 'oraclelicense=accept-securebackup-cookie' }
+  else
+    headers = {}
+  end
+
   remote_file archive_path do
     source new_resource.url
     checksum new_resource.checksum
+    headers(headers)
   end
 
   directory new_resource.path do
