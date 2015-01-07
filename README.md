@@ -53,6 +53,16 @@ oracle_jdk 'jdk' do
 end
 ```
 
+Same thing, but download directly from Oracle (** not recommended in production! **)
+```
+node.normal['oracle_jdk']['accept_oracle_download_terms'] = true
+
+oracle_jdk 'jdk' do
+  url 'http://download.oracle.com/otn-pub/java/jdk/7u71-b14/jdk-7u71-linux-x64.tar.gz'
+  checksum '80d5705fc37fc4eabe3cea480e0530ae0436c2c086eb8fc6f65bb21e8594baf8'
+end
+```
+
 Downloads/extracts jdk to `/opt/jdks/java-7-oracle` without installing
 any alternatives:
 ```
