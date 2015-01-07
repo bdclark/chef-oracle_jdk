@@ -53,7 +53,7 @@ oracle_jdk 'jdk' do
 end
 ```
 
-Downloads/extracts jdk to /opt/jdks/java-7-oracle without installing
+Downloads/extracts jdk to `/opt/jdks/java-7-oracle` without installing
 any alternatives:
 ```
 oracle_jdk 'jdk' do
