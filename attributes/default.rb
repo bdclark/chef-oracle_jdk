@@ -1,8 +1,12 @@
 # rubocop:disable Metrics/LineLength
 
-# default['oracle_jdk']['url'] = 'http://steadyserv-packages.s3.amazonaws.com/oracle-jdk/jdk-7u71-linux-x64.tar.gz'
-default['oracle_jdk']['url'] = 'http://download.oracle.com/otn-pub/java/jdk/7u71-b14/jdk-7u71-linux-x64.tar.gz'
-default['oracle_jdk']['checksum'] = '80d5705fc37fc4eabe3cea480e0530ae0436c2c086eb8fc6f65bb21e8594baf8'
+default['oracle_jdk']['version'] = '7'
+
+default['oracle_jdk']['7']['url'] = 'http://download.oracle.com/otn-pub/java/jdk/7u71-b14/jdk-7u71-linux-x64.tar.gz'
+default['oracle_jdk']['7']['checksum'] = '80d5705fc37fc4eabe3cea480e0530ae0436c2c086eb8fc6f65bb21e8594baf8'
+default['oracle_jdk']['8']['url'] = 'http://download.oracle.com/otn-pub/java/jdk/8u25-b17/jdk-8u25-linux-x64.tar.gz'
+default['oracle_jdk']['8']['checksum'] = '057f660799be2307d2eefa694da9d3fce8e165807948f5bcaa04f72845d2f529'
+
 default['oracle_jdk']['path'] = '/usr/lib/jvm'
 default['oracle_jdk']['app_name'] = nil
 default['oracle_jdk']['set_default'] = false

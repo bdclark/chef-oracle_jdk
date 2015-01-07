@@ -16,9 +16,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+version = node['oracle_jdk']['version']
+url = node['oracle_jdk'][version.to_s]['url']
+checksum = node['oracle_jdk'][version.to_s]['checksum']
+
 oracle_jdk 'jdk' do
-  url node['oracle_jdk']['url']
-  checksum node['oracle_jdk']['checksum']
+  url url
+  checksum checksum
   path node['oracle_jdk']['path']
   app_name node['oracle_jdk']['app_name']
   owner node['oracle_jdk']['owner']
