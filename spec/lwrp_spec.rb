@@ -24,6 +24,7 @@ describe 'oracle_jdk lwrp' do
   let(:path) { '/opt' }
   let(:set_alternatives) { nil }
   let(:set_default) { false }
+  let(:priority) { nil }
   let(:url) { 'https://example.com/jdk-7u71-linux-x64.tar.gz' }
   let(:accept_terms) { false }
   let(:link) { nil }
@@ -42,6 +43,7 @@ describe 'oracle_jdk lwrp' do
       node.set['oracle_test']['set_default'] = set_default
       node.set['oracle_test']['action'] = action
       node.set['oracle_test']['link'] = link
+      node.set['oracle_test']['priority'] = priority
       node.set['oracle_test']['7']['jre_cmds'] = jre_cmds
       node.set['oracle_test']['7']['jdk_cmds'] = jdk_cmds
     end.converge(recipe)
@@ -221,7 +223,7 @@ describe 'oracle_jdk lwrp' do
         # stub commands asserting alternatives not set
         rhel_java_alts.each do |cmd, path|
           stub = %(alternatives --display #{cmd} | grep )
-          stub << %("#{path} - priority 270071")
+          stub << %("#{path} - priority #{priority || '270071'}")
           stub_command(stub).and_return(false)
         end
       end
@@ -241,7 +243,27 @@ describe 'oracle_jdk lwrp' do
         end
       end
 
-      context 'when alternatives not set' do
+      context 'when alternatives not installed' do
+        context 'when priority not specified' do
+          rhel_java_alts.each do |cmd, _path|
+            it "installs #{cmd} alternative with default priority" do
+              expect(chef_run).to run_execute("install #{cmd} alternative")
+                .with(command: /270071/)
+            end
+          end
+        end
+
+        context 'when priority is specified' do
+          let(:priority) { 4444 }
+
+          rhel_java_alts.each do |cmd, _path|
+            it "installs #{cmd} alternative with specified priority" do
+              expect(chef_run).to run_execute("install #{cmd} alternative")
+                .with(command: /4444/)
+            end
+          end
+        end
+
         it 'installs java alternative and slaves' do
           expect(chef_run).to run_execute('install java alternative').with(
             command: %r{alternatives --install /usr/bin/java java })
@@ -284,7 +306,7 @@ describe 'oracle_jdk lwrp' do
         end
       end
 
-      context 'when alternatives set' do
+      context 'when alternatives installed' do
         before do
           # stub commands asserting alternatives already set
           rhel_java_alts.each do |cmd, path|
@@ -360,7 +382,7 @@ describe 'oracle_jdk lwrp' do
         end
       end
 
-      context 'when alternatives set' do
+      context 'when alternatives installed' do
         rhel_java_alts.each do |cmd, path|
           it "deletes #{cmd} alternative" do
             expect(chef_run).to run_execute("remove #{cmd} alternative").with(
@@ -369,7 +391,7 @@ describe 'oracle_jdk lwrp' do
         end
       end
 
-      context 'when alternatives not set' do
+      context 'when alternatives not installed' do
         before do
           # stub commands asserting alternatives not set
           rhel_java_alts.each do |cmd, path|
@@ -398,12 +420,14 @@ describe 'oracle_jdk lwrp' do
         # stub commands asserting alternatives not set
         jre_cmds.each do |cmd|
           stub = %(update-alternatives --display #{cmd} | grep )
-          stub << %("/opt/jdk1.7.0_71/jre/bin/#{cmd} - priority 1771")
+          stub << %("/opt/jdk1.7.0_71/jre/bin/#{cmd} - )
+          stub << %(priority #{priority || '1771'}")
           stub_command(stub).and_return(false)
         end
         jdk_cmds.each do |cmd|
           stub = %(update-alternatives --display #{cmd} | grep )
-          stub << %("/opt/jdk1.7.0_71/bin/#{cmd} - priority 1771")
+          stub << %("/opt/jdk1.7.0_71/bin/#{cmd} - )
+          stub << %(priority #{priority || '1771'}")
           stub_command(stub).and_return(false)
         end
       end
@@ -437,6 +461,26 @@ describe 'oracle_jdk lwrp' do
       end
 
       context 'when alternatives not installed' do
+        context 'when priority not specified' do
+          it 'installs alternatives with default priority' do
+            Array(jre_cmds + jdk_cmds).each do |cmd|
+              expect(chef_run).to run_execute("install #{cmd} alternative")
+                .with(command: /1771/)
+            end
+          end
+        end
+
+        context 'when priority is specified' do
+          let(:priority) { 4444 }
+
+          it 'installs alternatives with specified priority' do
+            Array(jre_cmds + jdk_cmds).each do |cmd|
+              expect(chef_run).to run_execute("install #{cmd} alternative")
+                .with(command: /4444/)
+            end
+          end
+        end
+
         it 'installs alternatives for all jre/jdk commands' do
           Array(jre_cmds + jdk_cmds).each do |cmd|
             expect(chef_run).to run_execute("install #{cmd} alternative")
@@ -450,7 +494,7 @@ describe 'oracle_jdk lwrp' do
         end
       end
 
-      context 'when alternatives set' do
+      context 'when alternatives installed' do
         before do
           # stub commands asserting alternatives already set
           jre_cmds.each do |cmd|
