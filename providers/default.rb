@@ -264,7 +264,6 @@ action :remove do
     to app_home
     action :delete
     only_if { app_link }
-    not_if { app_link == app_home }
   end
 
   directory app_home do
