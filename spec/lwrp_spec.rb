@@ -22,6 +22,7 @@ describe 'oracle_jdk lwrp' do
   let(:version) { nil }
   let(:action) { :install }
   let(:path) { '/opt' }
+  let(:set_alternatives) { nil }
   let(:set_default) { false }
   let(:url) { 'https://example.com/jdk-7u71-linux-x64.tar.gz' }
   let(:accept_terms) { false }
@@ -37,6 +38,7 @@ describe 'oracle_jdk lwrp' do
       node.set['oracle_jdk']['accept_oracle_download_terms'] = accept_terms
       node.set['oracle_test']['path'] = path
       node.set['oracle_test']['owner'] = 'bob'
+      node.set['oracle_test']['set_alternatives'] = set_alternatives
       node.set['oracle_test']['set_default'] = set_default
       node.set['oracle_test']['action'] = action
       node.set['oracle_test']['link'] = link
@@ -224,6 +226,21 @@ describe 'oracle_jdk lwrp' do
         end
       end
 
+      context 'when set_alternatives is false' do
+        let(:set_alternatives) { false }
+        let(:set_default) { true }
+
+        rhel_java_alts.each do |cmd, _path|
+          it "does not install #{cmd} alternative" do
+            expect(chef_run).not_to run_execute("install #{cmd} alternative")
+          end
+
+          it "does not set #{cmd} alternative" do
+            expect(chef_run).not_to run_execute("set #{cmd} alternative")
+          end
+        end
+      end
+
       context 'when alternatives not set' do
         it 'installs java alternative and slaves' do
           expect(chef_run).to run_execute('install java alternative').with(
@@ -388,6 +405,27 @@ describe 'oracle_jdk lwrp' do
           stub = %(update-alternatives --display #{cmd} | grep )
           stub << %("/opt/jdk1.7.0_71/bin/#{cmd} - priority 1771")
           stub_command(stub).and_return(false)
+        end
+      end
+
+      context 'when set_alternatives is false' do
+        let(:set_alternatives) { false }
+        let(:set_default) { true }
+
+        it 'does not create .jinfo template' do
+          expect(chef_run).not_to create_template('/opt/.jdk1.7.0_71.jinfo')
+        end
+
+        it 'does not install alternatives' do
+          Array(jre_cmds + jdk_cmds).each do |cmd|
+            expect(chef_run).not_to run_execute("install #{cmd} alternative")
+          end
+        end
+
+        it 'does not set alternatives' do
+          Array(jre_cmds + jdk_cmds).each do |cmd|
+            expect(chef_run).not_to run_execute("set #{cmd} alternative")
+          end
         end
       end
 
