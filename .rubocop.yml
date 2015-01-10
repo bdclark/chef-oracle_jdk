@@ -14,6 +14,9 @@ Style/Documentation:
 Style/SingleSpaceBeforeFirstArg:
   Enabled: false
 
+Metrics/AbcSize:
+  Max: 16
+
 # Metrics/MethodLength:
 #   Max: 20
 

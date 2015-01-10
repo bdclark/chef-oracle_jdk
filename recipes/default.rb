@@ -19,12 +19,12 @@
 version = node['oracle_jdk']['version']
 url = node['oracle_jdk'][version.to_s]['url']
 checksum = node['oracle_jdk'][version.to_s]['checksum']
+java_name = node['oracle_jdk']['app_name'] || "java-1.#{version}.0-oracle"
 
-oracle_jdk 'jdk' do
+oracle_jdk java_name do
   url url
   checksum checksum
   path node['oracle_jdk']['path']
-  app_name node['oracle_jdk']['app_name']
   owner node['oracle_jdk']['owner']
   group node['oracle_jdk']['group']
   set_default node['oracle_jdk']['set_default']

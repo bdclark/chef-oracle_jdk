@@ -14,19 +14,17 @@ describe 'oracle_jdk::default' do
       node.set['oracle_jdk']['path'] = '/opt/stuff'
       node.set['oracle_jdk']['owner'] = 'bob'
       node.set['oracle_jdk']['set_default'] = true
-      node.set['oracle_jdk']['app_name'] = 'my-jdk-name'
     end.converge(described_recipe)
   end
 
   context 'with version attribute of 7' do
     it 'installs oracle_jdk with url and checksum of jdk 7' do
-      expect(chef_run).to install_oracle_jdk('jdk').with(
+      expect(chef_run).to install_oracle_jdk('java-1.7.0-oracle').with(
         url: 'https://example.com/jdk-7u71-linux-x64.tar.gz',
         checksum: 'mychecksum7',
         path: '/opt/stuff',
         owner: 'bob',
-        set_default: true,
-        app_name: 'my-jdk-name')
+        set_default: true)
     end
   end
 
@@ -35,13 +33,12 @@ describe 'oracle_jdk::default' do
       chef_run.node.set['oracle_jdk']['version'] = 8
       chef_run.converge(described_recipe)
 
-      expect(chef_run).to install_oracle_jdk('jdk').with(
+      expect(chef_run).to install_oracle_jdk('java-1.8.0-oracle').with(
         url: 'https://example.com/jdk-8u25-linux-x64.tar.gz',
         checksum: 'mychecksum8',
         path: '/opt/stuff',
         owner: 'bob',
-        set_default: true,
-        app_name: 'my-jdk-name')
+        set_default: true)
     end
   end
 end

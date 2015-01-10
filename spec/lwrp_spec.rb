@@ -10,7 +10,7 @@ jdk_cmds = %w(javac appletviewer apt extcheck idlj jar jarsigner javadoc javah
               jsadebugd jstack jstat jstatd native2ascii rmic schemagen
               serialver wsgen wsimport xjc)
 
-rhel_java_alts = {
+java_alts = {
   'java' => '/opt/jdk1.7.0_71/jre/bin/java',
   'javac' => '/opt/jdk1.7.0_71/bin/javac',
   'jre_1.7.0' => '/opt/jdk1.7.0_71/jre',
@@ -35,6 +35,23 @@ describe 'oracle_jdk lwrp rhel' do
     end.converge(recipe)
   end
 
+  let(:ubuntu_run) do
+    ChefSpec::SoloRunner.new(step_into: ['oracle_jdk'],
+                             file_cache_path: '/var/chef/cache',
+                             platform: 'ubuntu', version: '12.04') do |node|
+      node.set['oracle_test']['url'] =
+        'https://example.com/jdk-7u71-linux-x64.tar.gz'
+      node.set['oracle_test']['checksum'] =
+        'mychecksum'
+      node.set['oracle_test']['path'] = '/opt'
+      node.set['oracle_test']['owner'] = 'bob'
+      node.set['oracle_test']['set_default'] = false
+      node.set['oracle_test']['action'] = :install
+      node.set['oracle_test']['7']['jre_cmds'] = jre_cmds
+      node.set['oracle_test']['7']['jdk_cmds'] = jdk_cmds
+    end.converge(recipe)
+  end
+
   let(:shellout) do
     double('shellout', run_command: nil, live_stream: nil, stdout: nil,
                        :live_stream= => nil, exitstatus: 0, error!: nil)
@@ -45,7 +62,7 @@ describe 'oracle_jdk lwrp rhel' do
   before do
     allow(Etc).to receive(:getpwnam).with('bob').and_return(getpwnam)
     # stub commands asserting alternatives not set
-    rhel_java_alts.each do |cmd, path|
+    java_alts.each do |cmd, path|
       stub = %(alternatives --display #{cmd} | grep )
       stub << %("#{path} - priority 270071")
       stub_command(stub).and_return(false)
@@ -176,7 +193,7 @@ describe 'oracle_jdk lwrp rhel' do
     context 'when alternatives set' do
       before do
         # stub commands asserting alternatives already set
-        rhel_java_alts.each do |cmd, path|
+        java_alts.each do |cmd, path|
           stub = %(alternatives --display #{cmd} | grep )
           stub << %("#{path} - priority 270071")
           stub_command(stub).and_return(true)
@@ -202,7 +219,7 @@ describe 'oracle_jdk lwrp rhel' do
     end
 
     context 'when set_default false' do
-      rhel_java_alts.each do |cmd, _path|
+      java_alts.each do |cmd, _path|
         it "does not set #{cmd} alternative" do
           expect(chef_run).not_to run_execute("set #{cmd} alternative")
         end
@@ -217,7 +234,7 @@ describe 'oracle_jdk lwrp rhel' do
       context 'when alternative link does not match' do
         before do
           # stub commands asserting alternative links don't match
-          rhel_java_alts.each do |cmd, path|
+          java_alts.each do |cmd, path|
             link_stub = %(alternatives --display #{cmd} | grep )
             link_stub << %("link currently points to #{path}")
             stub_command(link_stub).and_return(false)
@@ -251,7 +268,7 @@ describe 'oracle_jdk lwrp rhel' do
       context 'when alternative link matches' do
         before do
           # stub commands asserting alternative links match
-          rhel_java_alts.each do |cmd, path|
+          java_alts.each do |cmd, path|
             link_stub = %(alternatives --display #{cmd} | grep )
             link_stub << %("link currently points to #{path}")
             stub_command(link_stub).and_return(true)
@@ -259,7 +276,7 @@ describe 'oracle_jdk lwrp rhel' do
           chef_run.converge(recipe)
         end
 
-        rhel_java_alts.each do |cmd, _path|
+        java_alts.each do |cmd, _path|
           it "does not set #{cmd} alternative" do
             expect(chef_run).not_to run_execute("set #{cmd} alternative")
           end
@@ -271,7 +288,7 @@ describe 'oracle_jdk lwrp rhel' do
   context 'with :remove action' do
     before do
       # stub commands asserting alternatives already set
-      rhel_java_alts.each do |cmd, path|
+      java_alts.each do |cmd, path|
         stub = %(alternatives --display #{cmd} | grep "#{path}")
         stub_command(stub).and_return(true)
       end
@@ -333,7 +350,7 @@ describe 'oracle_jdk lwrp rhel' do
     end
 
     context 'when alternatives set' do
-      rhel_java_alts.each do |cmd, path|
+      java_alts.each do |cmd, path|
         it "deletes #{cmd} alternative" do
           expect(chef_run).to run_execute("remove #{cmd} alternative").with(
             command: "alternatives --remove #{cmd} \"#{path}\"")
@@ -344,14 +361,14 @@ describe 'oracle_jdk lwrp rhel' do
     context 'when alternatives not set' do
       before do
         # stub commands asserting alternatives not set
-        rhel_java_alts.each do |cmd, path|
+        java_alts.each do |cmd, path|
           stub = %(alternatives --display #{cmd} | grep "#{path}")
           stub_command(stub).and_return(false)
         end
         chef_run.converge(recipe)
       end
 
-      rhel_java_alts.each do |cmd, _path|
+      java_alts.each do |cmd, _path|
         it "does not delete #{cmd} alternative" do
           expect(chef_run).not_to run_execute("remove #{cmd} alternative")
         end

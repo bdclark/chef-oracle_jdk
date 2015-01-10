@@ -10,8 +10,8 @@ jdk_cmds = %w(javac appletviewer apt extcheck idlj jar jarsigner javadoc javah
               jsadebugd jstack jstat jstatd native2ascii rmic schemagen
               serialver wsgen wsimport xjc)
 
-describe 'oracle_jdk lwrp rhel' do
-  let(:chef_run) do
+describe 'oracle_jdk lwrp debian' do
+  let(:ubuntu_run) do
     ChefSpec::SoloRunner.new(step_into: ['oracle_jdk'],
                              file_cache_path: '/var/chef/cache',
                              platform: 'ubuntu', version: '12.04') do |node|
@@ -53,7 +53,7 @@ describe 'oracle_jdk lwrp rhel' do
   context 'with :install action' do
     context 'with non-oracle url' do
       it 'downloads jdk remote_file without oracle cookie' do
-        expect(chef_run).to create_remote_file(
+        expect(ubuntu_run).to create_remote_file(
           '/var/chef/cache/jdk-7u71-linux-x64.tar.gz').with(
             source: 'https://example.com/jdk-7u71-linux-x64.tar.gz',
             checksum: 'mychecksum',
@@ -65,10 +65,10 @@ describe 'oracle_jdk lwrp rhel' do
       it 'downloads jdk remote_file with oracle cookie' do
         url = 'http://download.oracle.com/otn-pub/java/jdk/7u71-b14/'
         url << 'jdk-7u71-linux-x64.tar.gz'
-        chef_run.node.set['oracle_test']['url'] = url
-        chef_run.node.set['oracle_jdk']['accept_oracle_download_terms'] = true
-        chef_run.converge(recipe)
-        expect(chef_run).to create_remote_file(
+        ubuntu_run.node.set['oracle_test']['url'] = url
+        ubuntu_run.node.set['oracle_jdk']['accept_oracle_download_terms'] = true
+        ubuntu_run.converge(recipe)
+        expect(ubuntu_run).to create_remote_file(
           '/var/chef/cache/jdk-7u71-linux-x64.tar.gz').with(
             source: url,
             checksum: 'mychecksum',
@@ -77,19 +77,19 @@ describe 'oracle_jdk lwrp rhel' do
     end
 
     it 'creates parent directory' do
-      expect(chef_run).to create_directory('/opt').with(
+      expect(ubuntu_run).to create_directory('/opt').with(
         owner: 'bob',
         group: 99,
         mode: '0755')
     end
 
     it 'extracts oracle jdk archive' do
-      expect(chef_run).to run_bash('extract oracle jdk').with(
+      expect(ubuntu_run).to run_bash('extract oracle jdk').with(
         code: %r{tar xzf "/var/chef/cache/jdk-7u71-linux-x64.tar.gz"})
     end
 
     it 'creates .jinfo template' do
-      expect(chef_run).to create_template('/opt/.jdk1.7.0_71.jinfo').with(
+      expect(ubuntu_run).to create_template('/opt/.jdk1.7.0_71.jinfo').with(
         source: 'oracle.jinfo.erb',
         owner: 'bob',
         group: 99)
@@ -98,10 +98,10 @@ describe 'oracle_jdk lwrp rhel' do
     context 'when alternatives not installed' do
       it 'installs alternatives for all jre/jdk commands' do
         Array(jre_cmds + jdk_cmds).each do |cmd|
-          expect(chef_run).to run_execute("install #{cmd} alternative").with(
+          expect(ubuntu_run).to run_execute("install #{cmd} alternative").with(
             command: %r{update-alternatives --install /usr/bin/#{cmd} #{cmd}})
           # man page slaves
-          expect(chef_run).to run_execute("install #{cmd} alternative").with(
+          expect(ubuntu_run).to run_execute("install #{cmd} alternative").with(
             command: %r{--slave /usr/share/man/man1/#{cmd}.1.gz #{cmd}.1.gz})
         end
       end
@@ -124,7 +124,7 @@ describe 'oracle_jdk lwrp rhel' do
 
       it 'does not install alternatives' do
         Array(jre_cmds + jdk_cmds).each do |cmd|
-          expect(chef_run).not_to run_execute("install #{cmd} alternative")
+          expect(ubuntu_run).not_to run_execute("install #{cmd} alternative")
         end
       end
     end
@@ -132,14 +132,14 @@ describe 'oracle_jdk lwrp rhel' do
     context 'when set_default false' do
       it 'does not set alternatives' do
         Array(jre_cmds + jdk_cmds).each do |cmd|
-          expect(chef_run).not_to run_execute("set #{cmd} alternative")
+          expect(ubuntu_run).not_to run_execute("set #{cmd} alternative")
         end
       end
     end
 
     context 'when set_default true' do
       before do
-        chef_run.node.set['oracle_test']['set_default'] = true
+        ubuntu_run.node.set['oracle_test']['set_default'] = true
       end
 
       context 'when alternative links do not match' do
@@ -155,12 +155,12 @@ describe 'oracle_jdk lwrp rhel' do
             link_stub << %(currently points to /opt/jdk1.7.0_71/bin/#{cmd}")
             stub_command(link_stub).and_return(false)
           end
-          chef_run.converge(recipe)
+          ubuntu_run.converge(recipe)
         end
 
         it 'sets alternatives for all jre/jdk commands' do
           Array(jre_cmds + jdk_cmds).each do |cmd|
-            expect(chef_run).to run_execute("set #{cmd} alternative").with(
+            expect(ubuntu_run).to run_execute("set #{cmd} alternative").with(
               command: /update-alternatives --set #{cmd}/)
           end
         end
@@ -179,12 +179,12 @@ describe 'oracle_jdk lwrp rhel' do
             link_stub << %(currently points to /opt/jdk1.7.0_71/bin/#{cmd}")
             stub_command(link_stub).and_return(true)
           end
-          chef_run.converge(recipe)
+          ubuntu_run.converge(recipe)
         end
 
         it 'does not set alternatives' do
           Array(jre_cmds + jdk_cmds).each do |cmd|
-            expect(chef_run).not_to run_execute("set #{cmd} alternative")
+            expect(ubuntu_run).not_to run_execute("set #{cmd} alternative")
           end
         end
       end
@@ -198,46 +198,46 @@ describe 'oracle_jdk lwrp rhel' do
         stub = %(update-alternatives --display #{cmd} | grep "/opt/jdk1.7.0_71")
         stub_command(stub).and_return(true)
       end
-      chef_run.node.set['oracle_test']['action'] = :remove
-      chef_run.converge(recipe)
+      ubuntu_run.node.set['oracle_test']['action'] = :remove
+      ubuntu_run.converge(recipe)
     end
 
     it 'does not download jdk remote_file' do
-      expect(chef_run).not_to create_remote_file(
+      expect(ubuntu_run).not_to create_remote_file(
         '/var/chef/cache/jdk-7u71-linux-x64.tar.gz')
     end
 
     it 'does not create parent directory' do
-      expect(chef_run).not_to create_directory('/opt')
+      expect(ubuntu_run).not_to create_directory('/opt')
     end
 
     it 'does not extract oracle jdk archive' do
-      expect(chef_run).not_to run_bash('extract oracle jdk')
+      expect(ubuntu_run).not_to run_bash('extract oracle jdk')
     end
 
     it 'does not create .jinfo template' do
-      expect(chef_run).not_to create_template(
+      expect(ubuntu_run).not_to create_template(
         '/opt/.jdk1.7.0_71.jinfo')
     end
 
     it 'deletes .jinfo file' do
-      expect(chef_run).to delete_file('/opt/.jdk1.7.0_71.jinfo')
+      expect(ubuntu_run).to delete_file('/opt/.jdk1.7.0_71.jinfo')
     end
 
     it 'deletes app directory' do
-      expect(chef_run).to delete_directory('/opt/jdk1.7.0_71')
+      expect(ubuntu_run).to delete_directory('/opt/jdk1.7.0_71')
     end
 
     context 'when alternatives set' do
       it 'deletes alternatives for all jre/jdk commands' do
         jre_cmds.each do |cmd|
           path = "/opt/jdk1.7.0_71/jre/bin/#{cmd}"
-          expect(chef_run).to run_execute("remove #{cmd} alternative").with(
+          expect(ubuntu_run).to run_execute("remove #{cmd} alternative").with(
             command: "update-alternatives --remove #{cmd} \"#{path}\"")
         end
         jdk_cmds.each do |cmd|
           path = "/opt/jdk1.7.0_71/bin/#{cmd}"
-          expect(chef_run).to run_execute("remove #{cmd} alternative").with(
+          expect(ubuntu_run).to run_execute("remove #{cmd} alternative").with(
             command: "update-alternatives --remove #{cmd} \"#{path}\"")
         end
       end
@@ -251,12 +251,12 @@ describe 'oracle_jdk lwrp rhel' do
           stub << %(grep "/opt/jdk1.7.0_71")
           stub_command(stub).and_return(false)
         end
-        chef_run.converge(recipe)
+        ubuntu_run.converge(recipe)
       end
 
       it 'does not delete alternatives' do
         Array(jre_cmds + jdk_cmds).each do |cmd|
-          expect(chef_run).not_to run_execute("remove #{cmd} alternative")
+          expect(ubuntu_run).not_to run_execute("remove #{cmd} alternative")
         end
       end
     end
