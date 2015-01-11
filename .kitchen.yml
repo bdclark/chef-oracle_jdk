@@ -16,3 +16,7 @@ suites:
     attributes:
       oracle_jdk:
         accept_oracle_download_terms: true
+  - name: jdks
+    run_list:
+      - recipe[apt::default]
+      - recipe[oracle_test::jdks]
