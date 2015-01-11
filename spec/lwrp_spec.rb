@@ -283,31 +283,37 @@ describe 'oracle_jdk lwrp' do
         it 'installs java alternative and slaves' do
           expect(chef_run).to run_execute('install java alternative').with(
             command: %r{alternatives --install /usr/bin/java java })
-          # slave bin commands
+          # bin command slaves
           jre_cmds[1..-1].each do |cmd|
             expect(chef_run).to run_execute('install java alternative').with(
               command: %r{--slave /usr/bin/#{cmd}})
           end
-          # slave man pages
+          # man page slaves
           jre_cmds.each do |cmd|
             expect(chef_run).to run_execute('install java alternative').with(
               command: %r{--slave /usr/share/man/man1/#{cmd}.1.gz})
           end
+          # jre slave
+          expect(chef_run).to run_execute('install java alternative').with(
+            command: %r{--slave /usr/lib/jvm/jre jre})
         end
 
         it 'installs javac alternative and slaves' do
           expect(chef_run).to run_execute('install javac alternative').with(
             command: %r{alternatives --install /usr/bin/javac javac })
-          # slave bin commands
+          # bin command slaves
           jdk_cmds[1..-1].each do |cmd|
             expect(chef_run).to run_execute('install javac alternative').with(
               command: %r{--slave /usr/bin/#{cmd}})
           end
-          # slave man pages
+          # man page slaves
           jdk_cmds.each do |cmd|
             expect(chef_run).to run_execute('install javac alternative').with(
               command: %r{--slave /usr/share/man/man1/#{cmd}.1.gz})
           end
+          # java_sdk slave
+          expect(chef_run).to run_execute('install javac alternative').with(
+            command: %r{--slave /usr/lib/jvm/java java_sdk})
         end
 
         it 'installs jre_1.x.0 alternative' do

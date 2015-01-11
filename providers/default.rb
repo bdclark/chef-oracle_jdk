@@ -152,7 +152,7 @@ action :install do
       end
 
       cmd = alt_group(jdk_cmds, "#{app_home}/bin", alt_priority, app_home)
-      cmd << alt_line('/usr/lib/jvm/java_sdk', 'java_sdk', app_home)
+      cmd << alt_line('/usr/lib/jvm/java', 'java_sdk', app_home)
       guard = %(alternatives --display javac | grep )
       guard << %("#{app_home}/bin/javac - priority #{alt_priority}")
 
