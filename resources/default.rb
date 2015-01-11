@@ -19,7 +19,7 @@
 actions :install, :remove
 default_action :install
 
-attribute :link, kind_of: String
+attribute :app_name, kind_of: String
 attribute :url, kind_of: String, required: true
 attribute :checksum, kind_of: String
 attribute :path, kind_of: String, default: '/usr/lib/jvm'
@@ -29,3 +29,4 @@ attribute :mode, kind_of: String, default: '0755'
 attribute :set_alternatives, equal_to: [true, false], default: true
 attribute :set_default, equal_to: [true, false], default: false
 attribute :priority, kind_of: Integer
+attribute :cookbook, kind_of: String, default: 'oracle_jdk'

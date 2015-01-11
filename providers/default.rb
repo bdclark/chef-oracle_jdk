@@ -43,11 +43,10 @@ def app_home
 end
 
 def app_name
-  # return unless new_resource.link
-  if new_resource.link && new_resource.link.include?('/')
-    fail "Invalid link name: #{new_resource.link}"
+  if new_resource.app_name && new_resource.app_name.include?('/')
+    fail "Invalid link name: #{new_resource.app_name}"
   end
-  new_resource.link || jdk_name
+  new_resource.app_name || jdk_name
 end
 
 def jre_cmds

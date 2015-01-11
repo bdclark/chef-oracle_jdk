@@ -27,7 +27,7 @@ describe 'oracle_jdk lwrp' do
   let(:priority) { nil }
   let(:url) { 'https://example.com/jdk-7u71-linux-x64.tar.gz' }
   let(:accept_terms) { false }
-  let(:link) { nil }
+  let(:app_name) { nil }
 
   let(:chef_run) do
     ChefSpec::SoloRunner.new(step_into: ['oracle_jdk'],
@@ -42,7 +42,7 @@ describe 'oracle_jdk lwrp' do
       node.set['oracle_test']['set_alternatives'] = set_alternatives
       node.set['oracle_test']['set_default'] = set_default
       node.set['oracle_test']['action'] = action
-      node.set['oracle_test']['link'] = link
+      node.set['oracle_test']['app_name'] = app_name
       node.set['oracle_test']['priority'] = priority
       node.set['oracle_test']['7']['jre_cmds'] = jre_cmds
       node.set['oracle_test']['7']['jdk_cmds'] = jdk_cmds
@@ -118,16 +118,16 @@ describe 'oracle_jdk lwrp' do
           code: %r{tar xzf "/var/chef/cache/jdk-7u71-linux-x64.tar.gz"})
       end
 
-      context 'when link not specified' do
-        let(:link) { nil }
+      context 'when app_name not specified' do
+        let(:app_name) { nil }
 
         it 'does not create symlink' do
           expect(chef_run).not_to create_link('jdk1.7.0_71')
         end
       end
 
-      context 'when link is valid' do
-        let(:link) { 'java-7-oracle' }
+      context 'when app_name is valid' do
+        let(:app_name) { 'java-7-oracle' }
 
         it 'creates symlink in install path' do
           expect(chef_run).to create_link('jdk1.7.0_71').with(
@@ -138,16 +138,16 @@ describe 'oracle_jdk lwrp' do
         end
       end
 
-      context 'when link contains a slash' do
-        let(:link) { '/var/lib/java-7-oracle' }
+      context 'when app_name contains a slash' do
+        let(:app_name) { '/var/lib/java-7-oracle' }
 
         it 'raises an error' do
           expect { chef_run }.to raise_error
         end
       end
 
-      context 'when link same as jdk name' do
-        let(:link) { 'jdk1.7.0_71' }
+      context 'when app_name same as jdk name' do
+        let(:app_name) { 'jdk1.7.0_71' }
 
         it 'does not create symlink' do
           expect(chef_run).not_to create_link('jdk1.7.0_71')
@@ -171,14 +171,14 @@ describe 'oracle_jdk lwrp' do
         expect(chef_run).not_to run_bash('extract oracle jdk')
       end
 
-      context 'when link not specified' do
+      context 'when app_name not specified' do
         it 'does not delete symlink' do
           expect(chef_run).not_to delete_link('jdk1.7.0_71')
         end
       end
 
-      context 'when link is valid' do
-        let(:link) { 'java-7-oracle' }
+      context 'when app_name is valid' do
+        let(:app_name) { 'java-7-oracle' }
 
         it 'deletes symlink in install path' do
           expect(chef_run).to delete_link('jdk1.7.0_71').with(
@@ -187,16 +187,16 @@ describe 'oracle_jdk lwrp' do
         end
       end
 
-      context 'when link contains a slash' do
-        let(:link) { '/var/lib/java-7-oracle' }
+      context 'when app_name contains a slash' do
+        let(:app_name) { '/var/lib/java-7-oracle' }
 
         it 'raises an error' do
           expect { chef_run }.to raise_error
         end
       end
 
-      context 'when link same as jdk name' do
-        let(:link) { 'jdk1.7.0_71' }
+      context 'when app_name same as jdk name' do
+        let(:app_name) { 'jdk1.7.0_71' }
 
         it 'does not delete symlink' do
           expect(chef_run).not_to delete_link('jdk1.7.0_71')
@@ -471,16 +471,16 @@ describe 'oracle_jdk lwrp' do
         end
       end
 
-      context 'when link is valid' do
-        let(:link) { 'foo' }
+      context 'when app_name is valid' do
+        let(:app_name) { 'foo' }
 
-        it 'creates .jinfo template from link name' do
+        it 'creates .jinfo template from app_name' do
           expect(chef_run).to create_template('/usr/lib/jvm/.foo.jinfo')
         end
       end
 
-      context 'when link is not specified' do
-        let(:link) { nil }
+      context 'when app_name is not specified' do
+        let(:app_name) { nil }
 
         it 'creates .jinfo template from jdk name' do
           expect(chef_run).to create_template('/usr/lib/jvm/.jdk1.7.0_71.jinfo')
@@ -615,8 +615,8 @@ describe 'oracle_jdk lwrp' do
         end
       end
 
-      context 'when link is valid' do
-        let(:link) { 'foo' }
+      context 'when app_name is valid' do
+        let(:app_name) { 'foo' }
 
         it 'does not create .jinfo template' do
           expect(chef_run).not_to create_template(
@@ -628,8 +628,8 @@ describe 'oracle_jdk lwrp' do
         end
       end
 
-      context 'when link is not specified' do
-        let(:link) { nil }
+      context 'when app_name is not specified' do
+        let(:app_name) { nil }
         it 'does not create .jinfo template from jdk name' do
           expect(chef_run).not_to create_template(
             '/usr/lib/jvm/.jdk1.7.0_71.jinfo')
