@@ -42,14 +42,12 @@ def app_home
   ::File.join(new_resource.path, jdk_name)
 end
 
-def app_link
-  return unless new_resource.link
-  link =  if ::Pathname.new(new_resource.link).absolute?
-            new_resource.link
-          else
-            ::File.join(new_resource.path, new_resource.link)
-          end
-  link == app_home ? nil : link
+def app_name
+  # return unless new_resource.link
+  if new_resource.link && new_resource.link.include?('/')
+    fail "Invalid link name: #{new_resource.link}"
+  end
+  new_resource.link || jdk_name
 end
 
 def jre_cmds
@@ -126,11 +124,11 @@ action :install do
   end
 
   link jdk_name do
-    target_file app_link
+    target_file ::File.join(new_resource.path, app_name) if app_name
     to app_home
     owner new_resource.owner
     group app_group
-    only_if { app_link }
+    only_if { app_name != jdk_name }
   end
 
   if new_resource.set_alternatives
@@ -198,15 +196,23 @@ action :install do
       end
 
     when 'debian'
-      template "#{new_resource.path}/.#{jdk_name}.jinfo" do
+      directory '/usr/lib/jvm' do
+        owner 'root'
+        group 'root'
+        mode '0755'
+      end
+
+      template "/usr/lib/jvm/.#{app_name}.jinfo" do
         source 'oracle.jinfo.erb'
         owner new_resource.owner
         group app_group
+        cookbook new_resource.cookbook
         variables(
           priority: alt_priority,
           jre_cmds: jre_cmds,
           jdk_cmds: jdk_cmds,
           name: jdk_name,
+          alias_name: app_name,
           app_home: app_home)
       end
 
@@ -262,10 +268,10 @@ end
 action :remove do
 
   link jdk_name do
-    target_file app_link
+    target_file ::File.join(new_resource.path, app_name)
     to app_home
     action :delete
-    only_if { app_link }
+    only_if { app_name != jdk_name }
   end
 
   directory app_home do
@@ -288,7 +294,7 @@ action :remove do
       end
     end
   when 'debian'
-    file "#{new_resource.path}/.#{jdk_name}.jinfo" do
+    file "/usr/lib/jvm/.#{app_name}.jinfo" do
       action :delete
     end
 

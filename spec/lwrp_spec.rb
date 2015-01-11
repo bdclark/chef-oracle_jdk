@@ -124,7 +124,7 @@ describe 'oracle_jdk lwrp' do
         end
       end
 
-      context 'when link is relative' do
+      context 'when link is valid' do
         let(:link) { 'java-7-oracle' }
 
         it 'creates symlink in install path' do
@@ -136,20 +136,16 @@ describe 'oracle_jdk lwrp' do
         end
       end
 
-      context 'when link is absolute' do
+      context 'when link contains a slash' do
         let(:link) { '/var/lib/java-7-oracle' }
 
-        it 'creates symlink' do
-          expect(chef_run).to create_link('jdk1.7.0_71').with(
-            target_file: '/var/lib/java-7-oracle',
-            to: '/opt/jdk1.7.0_71',
-            owner: 'bob',
-            group: 99)
+        it 'raises an error' do
+          expect { chef_run }.to raise_error
         end
       end
 
-      context 'when link same as jdk_home' do
-        let(:link) { '/opt/jdk1.7.0_71' }
+      context 'when link same as jdk name' do
+        let(:link) { 'jdk1.7.0_71' }
 
         it 'does not create symlink' do
           expect(chef_run).not_to create_link('jdk1.7.0_71')
@@ -179,7 +175,7 @@ describe 'oracle_jdk lwrp' do
         end
       end
 
-      context 'when link is relative' do
+      context 'when link is valid' do
         let(:link) { 'java-7-oracle' }
 
         it 'deletes symlink in install path' do
@@ -189,17 +185,16 @@ describe 'oracle_jdk lwrp' do
         end
       end
 
-      context 'when link is absolute' do
+      context 'when link contains a slash' do
         let(:link) { '/var/lib/java-7-oracle' }
 
-        it 'deletes symlink' do
-          expect(chef_run).to delete_link('jdk1.7.0_71').with(
-            target_file: link, to: '/opt/jdk1.7.0_71')
+        it 'raises an error' do
+          expect { chef_run }.to raise_error
         end
       end
 
-      context 'when link same as jdk_home' do
-        let(:link) { '/opt/jdk1.7.0_71' }
+      context 'when link same as jdk name' do
+        let(:link) { 'jdk1.7.0_71' }
 
         it 'does not delete symlink' do
           expect(chef_run).not_to delete_link('jdk1.7.0_71')
@@ -437,7 +432,8 @@ describe 'oracle_jdk lwrp' do
         let(:set_default) { true }
 
         it 'does not create .jinfo template' do
-          expect(chef_run).not_to create_template('/opt/.jdk1.7.0_71.jinfo')
+          expect(chef_run).not_to create_template(
+            '/usr/lib/jvm/.jdk1.7.0_71.jinfo')
         end
 
         it 'does not install alternatives' do
@@ -453,11 +449,21 @@ describe 'oracle_jdk lwrp' do
         end
       end
 
-      it 'creates .jinfo template' do
-        expect(chef_run).to create_template('/opt/.jdk1.7.0_71.jinfo').with(
-          source: 'oracle.jinfo.erb',
-          owner: 'bob',
-          group: 99)
+      context 'when link is valid' do
+        let(:link) { 'foo' }
+
+        it 'creates .jinfo template from link name' do
+          expect(chef_run).to create_template('/usr/lib/jvm/.foo.jinfo')
+        end
+      end
+
+      context 'when link is not specified' do
+        let(:link) { nil }
+
+        it 'creates .jinfo template from jdk name' do
+          expect(chef_run).to create_template('/usr/lib/jvm/.jdk1.7.0_71.jinfo')
+            .with(source: 'oracle.jinfo.erb', owner: 'bob', group: 99)
+        end
       end
 
       context 'when alternatives not installed' do
@@ -587,13 +593,29 @@ describe 'oracle_jdk lwrp' do
         end
       end
 
-      it 'does not create .jinfo template' do
-        expect(chef_run).not_to create_template(
-          '/opt/.jdk1.7.0_71.jinfo')
+      context 'when link is valid' do
+        let(:link) { 'foo' }
+
+        it 'does not create .jinfo template' do
+          expect(chef_run).not_to create_template(
+            '/usr/lib/jvm/.foo.jinfo')
+        end
+
+        it 'deletes .jinfo file' do
+          expect(chef_run).to delete_file('/usr/lib/jvm/.foo.jinfo')
+        end
       end
 
-      it 'deletes .jinfo file' do
-        expect(chef_run).to delete_file('/opt/.jdk1.7.0_71.jinfo')
+      context 'when link is not specified' do
+        let(:link) { nil }
+        it 'does not create .jinfo template from jdk name' do
+          expect(chef_run).not_to create_template(
+            '/usr/lib/jvm/.jdk1.7.0_71.jinfo')
+        end
+
+        it 'deletes .jinfo file from jdk name' do
+          expect(chef_run).to delete_file('/usr/lib/jvm/.jdk1.7.0_71.jinfo')
+        end
       end
 
       context 'when alternatives set' do
