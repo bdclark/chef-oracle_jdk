@@ -106,7 +106,8 @@ action :install do
     headers(headers)
   end
 
-  directory new_resource.path do
+  directory "#{new_resource.name}-install_path" do
+    path new_resource.path
     owner new_resource.owner
     group app_group
     mode new_resource.mode
@@ -132,10 +133,16 @@ action :install do
   end
 
   if new_resource.set_alternatives
+    directory '/usr/lib/jvm' do
+      owner 'root'
+      group 'root'
+      mode '0755'
+    end
+
     case node['platform_family']
     when 'rhel'
       cmd = alt_group(jre_cmds, "#{app_home}/jre/bin", alt_priority, app_home)
-      cmd << alt_line("#{new_resource.path}/jre", 'jre', "#{app_home}/jre")
+      cmd << alt_line('/usr/lib/jvm/jre', 'jre', "#{app_home}/jre")
       guard = %(alternatives --display java | grep )
       guard << %("#{app_home}/jre/bin/java - priority #{alt_priority}")
 
@@ -146,7 +153,7 @@ action :install do
       end
 
       cmd = alt_group(jdk_cmds, "#{app_home}/bin", alt_priority, app_home)
-      cmd << alt_line("#{new_resource.path}/java_sdk", 'java_sdk', app_home)
+      cmd << alt_line('/usr/lib/jvm/java_sdk', 'java_sdk', app_home)
       guard = %(alternatives --display javac | grep )
       guard << %("#{app_home}/bin/javac - priority #{alt_priority}")
 
@@ -156,7 +163,7 @@ action :install do
         not_if guard
       end
 
-      cmd = alt_line("#{new_resource.path}/jre-1.#{@version}.0",
+      cmd = alt_line("/usr/lib/jvm/jre-1.#{@version}.0",
                      "jre_1.#{@version}.0", "#{app_home}/jre", alt_priority)
       guard = %(alternatives --display jre_1.#{@version}.0 | grep )
       guard << %("#{app_home}/jre - priority #{alt_priority}")
@@ -167,7 +174,7 @@ action :install do
         not_if guard
       end
 
-      cmd = alt_line("#{new_resource.path}/java-1.#{@version}.0",
+      cmd = alt_line("/usr/lib/jvm/java-1.#{@version}.0",
                      "java_sdk_1.#{@version}.0", app_home, alt_priority)
       guard = %(alternatives --display java_sdk_1.#{@version}.0 | grep )
       guard << %("#{app_home} - priority #{alt_priority}")
@@ -196,12 +203,6 @@ action :install do
       end
 
     when 'debian'
-      directory '/usr/lib/jvm' do
-        owner 'root'
-        group 'root'
-        mode '0755'
-      end
-
       template "/usr/lib/jvm/.#{app_name}.jinfo" do
         source 'oracle.jinfo.erb'
         owner new_resource.owner

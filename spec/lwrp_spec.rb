@@ -97,14 +97,16 @@ describe 'oracle_jdk lwrp' do
 
       context 'when path not specified' do
         let(:path) { nil }
-        it 'creates /usr/lib/jvm parent directory' do
-          expect(chef_run).to create_directory('/usr/lib/jvm')
+        it 'creates /usr/lib/jvm install directory' do
+          expect(chef_run).to create_directory('jdk-install_path').with(
+            path: '/usr/lib/jvm')
         end
       end
 
       context 'when path is specified' do
-        it 'creates specified parent directory' do
-          expect(chef_run).to create_directory('/opt').with(
+        it 'creates specified install directory' do
+          expect(chef_run).to create_directory('jdk-install_path').with(
+            path: '/opt',
             owner: 'bob',
             group: 99,
             mode: '0755')
@@ -161,8 +163,8 @@ describe 'oracle_jdk lwrp' do
           '/var/chef/cache/jdk-7u71-linux-x64.tar.gz')
       end
 
-      it 'does not create parent directory' do
-        expect(chef_run).not_to create_directory('/opt')
+      it 'does not create install directory' do
+        expect(chef_run).not_to create_directory('jdk-install_path')
       end
 
       it 'does not extract oracle jdk archive' do
@@ -203,6 +205,25 @@ describe 'oracle_jdk lwrp' do
 
       it 'deletes app directory' do
         expect(chef_run).to delete_directory('/opt/jdk1.7.0_71')
+      end
+    end
+
+    context 'when set_alternatives is true' do
+      let(:set_alternatives) { true }
+
+      it 'creates /usr/lib/jvm directory' do
+        expect(chef_run).to create_directory('/usr/lib/jvm').with(
+          owner: 'root',
+          group: 'root',
+          mode: '0755')
+      end
+    end
+
+    context 'when set_alternatives is false' do
+      let(:set_alternatives) { false }
+
+      it 'does not create /usr/lib/jvm directory' do
+        expect(chef_run).not_to create_directory('/usr/lib/jvm')
       end
     end
   end
@@ -290,14 +311,15 @@ describe 'oracle_jdk lwrp' do
         end
 
         it 'installs jre_1.x.0 alternative' do
-          expect(chef_run).to run_execute('install jre_1.7.0 alternative').with(
-            command: %r{alternatives --install /opt/jre-1.7.0 jre_1.7.0 })
+          expect(chef_run).to run_execute('install jre_1.7.0 alternative')
+            .with(command:
+              %r{alternatives --install /usr/lib/jvm/jre-1.7.0 jre_1.7.0 })
         end
 
         it 'installs java_sdk_1.x.0 alternative' do
           expect(chef_run).to run_execute('install java_sdk_1.7.0 alternative')
             .with(command:
-                %r{alternatives --install /opt/java-1.7.0 java_sdk_1.7.0 })
+              %r{alternatives --install /usr/lib/jvm/java-1.7.0 java_sdk_1.7.0})
         end
       end
 
