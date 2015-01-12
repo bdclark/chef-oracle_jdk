@@ -55,13 +55,18 @@ node.default['oracle_jdk']['7']['url'] = 'http://repo.example.com/artifacts/jdk-
 
 ## Requirements
 
+#### Platform
 This cookbook has been tested on the following platforms, however similar
 platforms may also work:
 
-* Centos 6.5 / 7.0
-* Ubuntu 12.04 / 14.04
+* Centos (tested on 6.5)
+* Ubuntu (tested on 14.04)
+* Amazon (tested on 2014.09.01)
 
 ***NOTE: This cookbook has only been tested on 64-bit architectures!***
+
+#### Development
+This cookbook was written and tested using ChefDK v0.3.5
 
 ## Node Attributes
 
