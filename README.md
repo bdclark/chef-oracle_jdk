@@ -47,7 +47,7 @@ attribute to `true` in your cookbook, role, or environment:
 ```
 node.default['oracle_jdk']['accept_oracle_download_terms'] = true
 ```
-Or, to use your own artifact server, S3 bucket, etc. For example:
+Or, to use your own artifact server, S3 bucket, etc.:
 ```
 node.default['oracle_jdk']['version'] = '7'
 node.default['oracle_jdk']['7']['url'] = 'http://repo.example.com/artifacts/jdk-7u71-linux-x64.tar.gz'
