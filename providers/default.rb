@@ -266,7 +266,6 @@ action :install do
 end
 
 action :remove do
-
   link jdk_name do
     target_file ::File.join(new_resource.path, app_name)
     to app_home
