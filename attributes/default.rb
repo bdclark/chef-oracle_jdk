@@ -3,10 +3,17 @@
 # determines which url/checksum attributes to use to download oracle jdk
 default['oracle_jdk']['version'] = '7'
 # download urls and sha256 checksums for current oracle jdk tarballs
-default['oracle_jdk']['7']['url'] = 'http://download.oracle.com/otn-pub/java/jdk/7u75-b13/jdk-7u75-linux-x64.tar.gz'
-default['oracle_jdk']['7']['checksum'] = '460959219b534dc23e34d77abc306e180b364069b9fc2b2265d964fa2c281610'
-default['oracle_jdk']['8']['url'] = 'http://download.oracle.com/otn-pub/java/jdk/8u40-b26/jdk-8u40-linux-x64.tar.gz'
-default['oracle_jdk']['8']['checksum'] = 'da1ad819ce7b7ec528264f831d88afaa5db34b7955e45422a7e380b1ead6b04d'
+default['oracle_jdk']['7']['url'] = 'http://download.oracle.com/otn-pub/java/jdk/7u79-b15/jdk-7u79-linux-x64.tar.gz'
+default['oracle_jdk']['7']['checksum'] = nil
+default['oracle_jdk']['8']['url'] = 'http://download.oracle.com/otn-pub/java/jdk/8u51-b16/jdk-8u51-linux-x64.tar.gz'
+default['oracle_jdk']['8']['checksum'] = nil
+
+# checksums of known JDK tarballs
+default['oracle_jdk']['checksums']['7']['71'] = '80d5705fc37fc4eabe3cea480e0530ae0436c2c086eb8fc6f65bb21e8594baf8'
+default['oracle_jdk']['checksums']['7']['75'] = '460959219b534dc23e34d77abc306e180b364069b9fc2b2265d964fa2c281610'
+default['oracle_jdk']['checksums']['7']['79'] = '29d75d0022bfa211867b876ddd31a271b551fa10727401398295e6e666a11d90'
+default['oracle_jdk']['checksums']['8']['40'] = 'da1ad819ce7b7ec528264f831d88afaa5db34b7955e45422a7e380b1ead6b04d'
+default['oracle_jdk']['checksums']['8']['51'] = 'd7149012cc51c2cdb8d3a1767825e0dfc36ca0419c3dae56d993cb2732cbeff1'
 
 # root install path of jdk
 default['oracle_jdk']['path'] = '/usr/lib/jvm'

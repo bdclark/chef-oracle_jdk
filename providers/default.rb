@@ -72,8 +72,14 @@ def alt_priority
 end
 
 action :install do
-  if new_resource.checksum.nil? || new_resource.checksum.empty?
-    fail %(Attribute 'checksum' required on :install action)
+  if new_resource.checksum.nil?
+    if node['oracle_jdk']['checksums'][@version][@revision]
+      checksum = node['oracle_jdk']['checksums'][@version][@revision]
+    else
+      fail %(checksum required on :install action)
+    end
+  else
+    checksum = new_resource.checksum
   end
 
   archive_dir = Chef::Config[:file_cache_path]
@@ -101,7 +107,7 @@ action :install do
 
   remote_file archive_path do
     source new_resource.url
-    checksum new_resource.checksum
+    checksum checksum
     headers(headers)
   end
 

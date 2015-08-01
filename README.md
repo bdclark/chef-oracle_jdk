@@ -124,8 +124,8 @@ cookbook uses this resource to install/configure the jdk.
 #### Attributes
 
 * `url` - Required. Download URL of Oracle jdk tarball.
-* `checksum` SHA256 checksum of downloaded jdk archive. Required with
-  `:install` action.
+* `checksum` SHA256 checksum of downloaded jdk archive. If not set, will attempt
+to lookup checksum from known values in `node['oracle_jdk']['checksums'][version][revision]`.
 * `path` - Installation root path. Defaults to `/usr/lib/jvm`.
 * `app_name` - Optional "friendly" (symlink) name. If specified, creates
 symlink `path/app_name` pointing to installed jdk. If not specified, no symlink
