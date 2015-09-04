@@ -27,7 +27,9 @@ def load_current_resource
   match =
     /jdk-(\d)u(\d+)-linux-(x64|i586)\.(tar.gz|gz|tgz)$/.match(@tarball_name)
   fail "Unrecognized or unsupported Oracle JDK: #{@tarball_name}" unless match
-  @version, @revision, @extension = match[1], match[2], match[4]
+  @version = match[1]
+  @revision = match[2]
+  @extension = match[4]
 end
 
 def jdk_name
@@ -330,7 +332,8 @@ def alt_line(link, name, path, priority = nil)
 end
 
 def alt_cmd_line(link_dir, name, real_dir, priority = nil)
-  link, path = ::File.join(link_dir, name), ::File.join(real_dir, name)
+  link = ::File.join(link_dir, name)
+  path = ::File.join(real_dir, name)
   alt_line(link, name, path, priority)
 end
 
