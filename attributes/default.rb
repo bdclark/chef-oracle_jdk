@@ -5,7 +5,7 @@ default['oracle_jdk']['version'] = '7'
 # download urls and sha256 checksums for current oracle jdk tarballs
 default['oracle_jdk']['7']['url'] = 'http://download.oracle.com/otn-pub/java/jdk/7u79-b15/jdk-7u79-linux-x64.tar.gz'
 default['oracle_jdk']['7']['checksum'] = nil
-default['oracle_jdk']['8']['url'] = 'http://download.oracle.com/otn-pub/java/jdk/8u51-b16/jdk-8u51-linux-x64.tar.gz'
+default['oracle_jdk']['8']['url'] = 'http://download.oracle.com/otn-pub/java/jdk/8u60-b27/jdk-8u60-linux-x64.tar.gz'
 default['oracle_jdk']['8']['checksum'] = nil
 
 # checksums of known JDK tarballs
@@ -14,6 +14,7 @@ default['oracle_jdk']['checksums']['7']['75'] = '460959219b534dc23e34d77abc306e1
 default['oracle_jdk']['checksums']['7']['79'] = '29d75d0022bfa211867b876ddd31a271b551fa10727401398295e6e666a11d90'
 default['oracle_jdk']['checksums']['8']['40'] = 'da1ad819ce7b7ec528264f831d88afaa5db34b7955e45422a7e380b1ead6b04d'
 default['oracle_jdk']['checksums']['8']['51'] = 'd7149012cc51c2cdb8d3a1767825e0dfc36ca0419c3dae56d993cb2732cbeff1'
+default['oracle_jdk']['checksums']['8']['60'] = 'ebe51554d2f6c617a4ae8fc9a8742276e65af01bd273e96848b262b3c05424e5'
 
 # root install path of jdk
 default['oracle_jdk']['path'] = '/usr/lib/jvm'
@@ -50,7 +51,7 @@ default['oracle_jdk']['8']['jre_cmds'] =
      servertool tnameserv unpack200)
 
 default['oracle_jdk']['8']['jdk_cmds'] =
-  %w(javac appletviewer apt extcheck idlj jar jarsigner javadoc javah javap
+  %w(javac appletviewer extcheck idlj jar jarsigner javadoc javah javap
      javapackager javaws jcmd jconsole jdb jdeps jhat jinfo jmap jps
      jrunscript jsadebugd jstack jstat jstatd native2ascii rmic schemagen
      serialver wsgen wsimport xjc)
