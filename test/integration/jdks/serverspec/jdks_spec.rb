@@ -34,17 +34,17 @@ if platform_family == 'debian'
   end
 end
 
-describe command('/opt/jdks/oracle-jdk7/bin/java -version') do
+describe command('/opt/jdks/oracle-jdk7/bin/java -version 2>&1') do
   its(:stdout) { should match(/java version \"1.7.0_\d{2}\"/) }
   its(:stdout) { should match(/Java\(TM\) SE Runtime Environment/) }
 end
 
-describe command('/opt/jdks/oracle-jdk8/bin/java -version') do
+describe command('/opt/jdks/oracle-jdk8/bin/java -version 2>&1') do
   its(:stdout) { should match(/java version \"1.8.0_\d{2}\"/) }
   its(:stdout) { should match(/Java\(TM\) SE Runtime Environment/) }
 end
 
-describe command("#{alt_cmd} --display java") do
+describe command("#{alt_cmd} --display java 2>&1") do
   # should be in manual mode due to set_default true and low alt_priority
   # compared to openjdk package
   its(:stdout) { should match(/^java.*?manual/) }
@@ -64,12 +64,12 @@ end
 
 if platform_family == 'rhel'
   # java alternative should have jre slave
-  cmd = %(#{alt_cmd} --display java | grep "slave jre: /opt/jdks/jdk1.7.0")
+  cmd = %(#{alt_cmd} --display java 2>&1 | grep "slave jre: /opt/jdks/jdk1.7.0")
   describe command(cmd) do
     its(:stdout) { should match %r{slave jre: /opt/jdks/jdk1.7.0_\d{2}/jre} }
   end
   # javac alternative should have java_sdk slave
-  cmd = %(#{alt_cmd} --display javac | grep "slave java_sdk: /opt/jdks/jdk1.7.0")
+  cmd = %(#{alt_cmd} --display javac 2>&1 | grep "slave java_sdk: /opt/jdks/jdk1.7.0")
   describe command(cmd) do
     its(:stdout) { should match %r{slave java_sdk: /opt/jdks/jdk1.7.0_\d{2}} }
   end

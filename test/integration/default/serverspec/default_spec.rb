@@ -22,7 +22,7 @@ if %w(debian ubuntu).include? os[:family]
   end
 end
 
-describe command('java -version') do
+describe command('java -version 2>&1') do
   its(:stdout) { should match(/java version \"1.7.0_\d{2}\"/) }
   its(:stdout) { should match(/Java\(TM\) SE Runtime Environment/) }
 end
@@ -36,7 +36,7 @@ when 'debian', 'ubuntu'
   priority = '17\d{2}'
 end
 
-describe command("#{alt_cmd} --display java") do
+describe command("#{alt_cmd} --display java 2>&1") do
   its(:stdout) do
     should match %r{points to /usr/lib/jvm/jdk1.7.0_\d{2}/jre/bin/java}
   end
